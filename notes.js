@@ -1,5 +1,8 @@
 // ─── Constants ───
 const DEFAULT_HEIGHT = 160;
+const DEFAULT_WIDTH = 220;
+const MIN_NOTE_WIDTH = 120;
+const MAX_NOTE_WIDTH = 600;
 const MIN_NOTE_HEIGHT = 80;
 const MAX_NOTE_HEIGHT = 500;
 const SNAP_X_THRESHOLD = 120;
@@ -30,6 +33,7 @@ let insertionPreview = null;
 // ─── Reusable Helpers ───
 const getNoteEl = (id) => $('note-' + id);
 const noteHeight = (n) => n.height || DEFAULT_HEIGHT;
+const noteWidth = (n) => n.width || DEFAULT_WIDTH;
 const CONTENT_SEP = '\n---\n';
 
 /** Split note content into word (top) and definition (bottom) */
@@ -494,6 +498,7 @@ function createNoteElement(data) {
     noteEl.style.top = data.y + 'px';
     noteEl.style.zIndex = data.z || 1;
     noteEl.style.height = noteHeight(data) + 'px';
+    noteEl.style.width = noteWidth(data) + 'px';
 
     const { word, def } = splitContent(data.content);
 
@@ -530,6 +535,7 @@ function createNoteElement(data) {
             <div class="shuffle-word-area"></div>
             <div class="shuffle-def-area"></div>
         </div>
+        <div class="resize-handle-h"></div>
         <div class="collapsed-indicator">\u25BC <span class="collapsed-count">0</span> collapsed</div>`;
 
     const header = noteEl.querySelector('.note-header');
@@ -600,6 +606,39 @@ function createNoteElement(data) {
     };
     resizeHandle.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize(e.clientY); });
     resizeHandle.addEventListener('touchstart', (e) => { e.stopPropagation(); startResize(e.touches[0].clientY); }, { passive: true });
+
+    // ─ Horizontal resize ─
+    const resizeHandleH = noteEl.querySelector('.resize-handle-h');
+    let hResizing = false, hResizeStartX = 0, hResizeStartW = 0;
+
+    const startHResize = (cx) => {
+        hResizing = true;
+        hResizeStartX = cx;
+        hResizeStartW = noteWidth(data);
+        noteEl.classList.add('is-resizing');
+        bringToFront(noteEl, data);
+        const onMove = (ev) => {
+            if (!hResizing) return;
+            const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+            data.width = Math.max(MIN_NOTE_WIDTH, Math.min(MAX_NOTE_WIDTH, hResizeStartW + clientX - hResizeStartX));
+            noteEl.style.width = data.width + 'px';
+        };
+        const onEnd = () => {
+            hResizing = false;
+            noteEl.classList.remove('is-resizing', 'active-focus');
+            saveNotes();
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    };
+    resizeHandleH.addEventListener('mousedown', (e) => { e.stopPropagation(); e.preventDefault(); startHResize(e.clientX); });
+    resizeHandleH.addEventListener('touchstart', (e) => { e.stopPropagation(); startHResize(e.touches[0].clientX); }, { passive: false });
 
     // ─ Shuffle: flashcard-style (word → reveal def → next card) ─
     const shuffleBtn = noteEl.querySelector('.shuffle-btn');
@@ -1131,6 +1170,13 @@ $('organize-btn')?.addEventListener('click', () => {
     const standaloneGroups = groups.filter(g => !g.root.isPinRoot);
 
     const COL_WIDTH = 260, START_X = 60, START_Y = 160;
+
+    // Reset all note widths to default
+    notes.forEach(n => {
+        delete n.width;
+        const el = getNoteEl(n.id);
+        if (el) el.style.width = DEFAULT_WIDTH + 'px';
+    });
 
     // Layout pinned groups in first row
     pinnedGroups.forEach((group, gi) => {

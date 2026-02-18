@@ -35,6 +35,9 @@ body::after{content:'bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for
 .resize-handle{position:absolute;bottom:0;left:0;right:0;height:14px;cursor:ns-resize;display:flex;justify-content:center;align-items:center;opacity:0;transition:opacity 0.2s}
 .resize-handle::after{content:'• • •';font-size:8px;color:rgba(0,0,0,0.3);letter-spacing:2px}
 .note:hover .resize-handle{opacity:1}
+.resize-handle-h{position:absolute;top:0;right:-6px;bottom:0;width:12px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;z-index:1}
+.resize-handle-h::after{content:'⋮';font-size:10px;color:rgba(0,0,0,0.25)}
+.note:hover .resize-handle-h{opacity:1}
 .controls{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:14px;z-index:1000000}
 .ctrl-btn{width:60px;height:60px;border-radius:50%;color:white;display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 15px rgba(0,0,0,0.15),-2px -2px 8px rgba(255,255,255,0.5);cursor:pointer;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);border:none;outline:none}
 #add-btn{background:linear-gradient(135deg,#fda4af 0%,#f472b6 100%)}
