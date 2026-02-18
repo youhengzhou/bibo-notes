@@ -1,1099 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bibo notes (notes for bibo!)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
-
-        body {
-            background: linear-gradient(135deg, #ffeef8 0%, #fff5f0 50%, #f0f7ff 100%);
-            background-attachment: fixed;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            margin: 0;
-            font-size: 16px;
-            font-family: 'Nunito', sans-serif;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(255, 182, 193, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(173, 216, 230, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 218, 185, 0.2) 0%, transparent 40%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        body::after {
-            content: 'bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            font-family: 'Nunito', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            color: rgba(236, 72, 153, 0.06);
-            letter-spacing: 8px;
-            line-height: 80px;
-            word-spacing: 40px;
-            white-space: pre-wrap;
-            pointer-events: none;
-            z-index: -1;
-            transform: rotate(-5deg) scale(1.2);
-            overflow: hidden;
-        }
-
-        .note {
-            position: absolute;
-            width: 220px;
-            min-height: 80px;
-            padding: 0.75rem;
-            padding-bottom: 1.25rem;
-            background: linear-gradient(145deg, #fffef5 0%, #fff9e6 100%);
-            border-radius: 16px;
-            box-shadow: 
-                3px 3px 10px rgba(0,0,0,0.08),
-                -1px -1px 5px rgba(255,255,255,0.8);
-            user-select: none;
-            display: flex;
-            flex-direction: column;
-            border: 2px solid rgba(255, 200, 150, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s, top 0.3s, left 0.3s;
-        }
-
-        .note::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 8px;
-            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
-            border-radius: 4px 4px 0 0;
-            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-        }
-
-        .note.is-pin-root {
-            border: 2px solid rgba(244, 114, 182, 0.5);
-            background: linear-gradient(145deg, #fff5f8 0%, #ffe8f0 100%);
-            box-shadow: 
-                4px 4px 15px rgba(244, 114, 182, 0.2),
-                -2px -2px 8px rgba(255,255,255,0.9);
-        }
-
-        .note.is-pin-root::before {
-            background: linear-gradient(to bottom, #f472b6, #ec4899);
-        }
-
-        .note.is-stacked {
-            border-left: 4px solid #a78bfa;
-            background: linear-gradient(145deg, #faf5ff 0%, #f3e8ff 100%);
-        }
-
-        .drag-handle {
-            cursor: grab;
-            font-size: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.6;
-            padding: 2px 8px;
-            background: rgba(255, 182, 193, 0.3);
-            border-radius: 10px;
-            color: #d97706;
-        }
-        .drag-handle:active { cursor: grabbing; }
-
-        .note.active-focus {
-            box-shadow: 
-                8px 8px 20px rgba(0,0,0,0.12),
-                -2px -2px 10px rgba(255,255,255,0.9);
-            transform: scale(1.03) rotate(1deg);
-            z-index: 99999 !important;
-            transition: none !important;
-        }
-
-        .note.is-resizing {
-            transition: none !important;
-        }
-
-        .note-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 2px dashed rgba(255, 182, 193, 0.4);
-            height: 20px;
-            cursor: grab;
-        }
-        .note-header:active { cursor: grabbing; }
-
-        .note-content {
-            flex-grow: 1;
-            border: none;
-            outline: none;
-            resize: none;
-            width: 100%;
-            font-family: 'Nunito', sans-serif;
-            font-size: 0.85rem;
-            color: #5c4033;
-            background: transparent;
-            line-height: 1.5;
-        }
-
-        .note-content::placeholder {
-            color: #d4a574;
-            font-style: italic;
-        }
-
-        .header-btn {
-            opacity: 0.5;
-            transition: all 0.2s;
-            cursor: pointer;
-            padding: 3px;
-            border-radius: 50%;
-        }
-        .note:hover .header-btn { opacity: 1; }
-        .header-btn:hover { 
-            transform: scale(1.2); 
-            background: rgba(255, 182, 193, 0.3);
-        }
-        .header-btn.active-pin { 
-            opacity: 1; 
-            color: #ec4899;
-            animation: pin-bounce 0.5s ease;
-        }
-
-        @keyframes pin-bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-        }
-
-        .resize-handle {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 14px;
-            cursor: ns-resize;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .resize-handle::after {
-            content: '• • •';
-            font-size: 8px;
-            color: rgba(0,0,0,0.3);
-            letter-spacing: 2px;
-        }
-
-        .note:hover .resize-handle {
-            opacity: 1;
-        }
-
-        .controls {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            z-index: 1000000;
-        }
-
-        .ctrl-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 
-                4px 4px 15px rgba(0,0,0,0.15),
-                -2px -2px 8px rgba(255,255,255,0.5);
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-            outline: none;
-        }
-
-        #add-btn { 
-            background: linear-gradient(135deg, #fda4af 0%, #f472b6 100%);
-        }
-        #export-btn { 
-            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-        }
-        #import-btn { 
-            background: linear-gradient(135deg, #6ee7b7 0%, #10b981 100%);
-        }
-        .ctrl-btn:hover { 
-            transform: scale(1.15) rotate(5deg); 
-            box-shadow: 6px 6px 20px rgba(0,0,0,0.2);
-        }
-        .ctrl-btn:active { transform: scale(0.95); }
-
-        #export-panel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 550px;
-            background: linear-gradient(145deg, #ffffff 0%, #fff5f8 100%);
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(244, 114, 182, 0.1);
-            z-index: 2000000;
-            display: none;
-            border: 2px solid rgba(244, 114, 182, 0.2);
-        }
-
-        #export-text {
-            width: 100%;
-            height: 350px;
-            font-family: 'Nunito', monospace;
-            font-size: 0.9rem;
-            padding: 1.25rem;
-            background: linear-gradient(145deg, #fefefe 0%, #faf5ff 100%);
-            border: 2px dashed rgba(167, 139, 250, 0.3);
-            border-radius: 16px;
-            resize: none;
-            outline: none;
-            color: #5c4033;
-        }
-
-        #export-text:focus {
-            border-color: rgba(244, 114, 182, 0.5);
-        }
-
-        #import-panel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 550px;
-            background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(16, 185, 129, 0.1);
-            z-index: 2000000;
-            display: none;
-            border: 2px solid rgba(16, 185, 129, 0.2);
-        }
-
-        #import-text {
-            width: 100%;
-            height: 280px;
-            font-family: 'Nunito', monospace;
-            font-size: 0.9rem;
-            padding: 1.25rem;
-            background: linear-gradient(145deg, #fefefe 0%, #f0fdf4 100%);
-            border: 2px dashed rgba(16, 185, 129, 0.3);
-            border-radius: 16px;
-            resize: none;
-            outline: none;
-            color: #5c4033;
-        }
-
-        #import-text:focus {
-            border-color: rgba(16, 185, 129, 0.5);
-        }
-
-        .snap-preview { 
-            outline: 3px dashed #f472b6; 
-            opacity: 0.7;
-            animation: pulse-outline 1s infinite;
-        }
-
-        @keyframes pulse-outline {
-            0%, 100% { outline-offset: 0px; }
-            50% { outline-offset: 4px; }
-        }
-
-        /* Cute decorative elements */
-        .empty-state h1 {
-            color: #ec4899;
-            font-weight: 700;
-        }
-
-        .empty-state p {
-            color: #9ca3af;
-        }
-
-        /* Cute bear mascots */
-        .bears {
-            position: fixed;
-            bottom: 1rem;
-            left: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            z-index: 1000;
-        }
-
-        .bear {
-            font-size: 1.8rem;
-            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.1));
-        }
-
-        .bears-text {
-            font-size: 0.75rem;
-            color: #d97706;
-            font-weight: 600;
-            margin-left: 6px;
-            opacity: 0.7;
-        }
-
-        /* Page title */
-        .page-title {
-            position: fixed;
-            top: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: rgba(236, 72, 153, 0.4);
-            letter-spacing: 6px;
-            text-transform: lowercase;
-            pointer-events: none;
-            z-index: 100000;
-            text-shadow: 2px 2px 8px rgba(255, 182, 193, 0.3);
-        }
-
-        /* Collapsed stack indicator */
-        .collapsed-indicator {
-            position: absolute;
-            bottom: -22px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            color: #9ca3af;
-            white-space: nowrap;
-            cursor: pointer;
-            padding: 2px 8px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.8);
-            transition: all 0.2s;
-            display: none;
-        }
-        
-        .collapsed-indicator:hover {
-            color: #ec4899;
-            background: rgba(244, 114, 182, 0.1);
-        }
-        
-        .note.is-pin-root.collapsed .collapsed-indicator {
-            display: block;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>bibo notes (notes for bibo!)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+body{background:linear-gradient(135deg,#ffeef8 0%,#fff5f0 50%,#f0f7ff 100%);background-attachment:fixed;overflow:hidden;height:100vh;width:100vw;margin:0;font-size:16px;font-family:'Nunito',sans-serif;touch-action:none}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:radial-gradient(circle at 20% 80%,rgba(255,182,193,0.3) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(173,216,230,0.3) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(255,218,185,0.2) 0%,transparent 40%);pointer-events:none;z-index:-1}
+body::after{content:'bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡ bibo notes ✿ notes for bibo! ♡';position:fixed;top:0;left:0;right:0;bottom:0;font-family:'Nunito',sans-serif;font-size:24px;font-weight:700;color:rgba(236,72,153,0.06);letter-spacing:8px;line-height:80px;word-spacing:40px;white-space:pre-wrap;pointer-events:none;z-index:-1;transform:rotate(-5deg) scale(1.2);overflow:hidden}
+#viewport{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;cursor:grab}
+#viewport.is-panning{cursor:grabbing}
+#canvas{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:0 0}
+#canvas.canvas-animating{transition:transform 0.4s ease-out}
+.note{position:absolute;width:220px;min-height:80px;padding:0.75rem;padding-bottom:1.25rem;background:linear-gradient(145deg,#fffef5 0%,#fff9e6 100%);border-radius:16px;box-shadow:3px 3px 10px rgba(0,0,0,0.08),-1px -1px 5px rgba(255,255,255,0.8);user-select:none;display:flex;flex-direction:column;border:2px solid rgba(255,200,150,0.3);transition:transform 0.2s,box-shadow 0.2s,top 0.3s,left 0.3s}
+.note::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:30px;height:8px;background:linear-gradient(to bottom,#e8e8e8,#d0d0d0);border-radius:4px 4px 0 0;box-shadow:0 -2px 4px rgba(0,0,0,0.1)}
+.note.is-pin-root{border:2px solid rgba(244,114,182,0.5);background:linear-gradient(145deg,#fff5f8 0%,#ffe8f0 100%);box-shadow:4px 4px 15px rgba(244,114,182,0.2),-2px -2px 8px rgba(255,255,255,0.9)}
+.note.is-pin-root::before{background:linear-gradient(to bottom,#f472b6,#ec4899)}
+.note.is-stacked{border-left:4px solid #a78bfa;background:linear-gradient(145deg,#faf5ff 0%,#f3e8ff 100%)}
+.drag-handle{cursor:grab;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;opacity:0.6;padding:2px 8px;background:rgba(255,182,193,0.3);border-radius:10px;color:#d97706}
+.drag-handle:active{cursor:grabbing}
+.note.active-focus{box-shadow:8px 8px 20px rgba(0,0,0,0.12),-2px -2px 10px rgba(255,255,255,0.9);transform:scale(1.03) rotate(1deg);z-index:99999!important;transition:none!important}
+.note.is-resizing{transition:none!important}
+.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px dashed rgba(255,182,193,0.4);height:20px;cursor:grab}
+.note-header:active{cursor:grabbing}
+.note-content{flex-grow:1;border:none;outline:none;resize:none;width:100%;font-family:'Nunito',sans-serif;font-size:0.85rem;color:#5c4033;background:transparent;line-height:1.5}
+.note-content::placeholder{color:#d4a574;font-style:italic}
+.header-btn{opacity:0.5;transition:all 0.2s;cursor:pointer;padding:3px;border-radius:50%}
+.note:hover .header-btn{opacity:1}
+.header-btn:hover{transform:scale(1.2);background:rgba(255,182,193,0.3)}
+.header-btn.active-pin{opacity:1;color:#ec4899;animation:pin-bounce 0.5s ease}
+@keyframes pin-bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+.resize-handle{position:absolute;bottom:0;left:0;right:0;height:14px;cursor:ns-resize;display:flex;justify-content:center;align-items:center;opacity:0;transition:opacity 0.2s}
+.resize-handle::after{content:'• • •';font-size:8px;color:rgba(0,0,0,0.3);letter-spacing:2px}
+.note:hover .resize-handle{opacity:1}
+.controls{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:14px;z-index:1000000}
+.ctrl-btn{width:60px;height:60px;border-radius:50%;color:white;display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 15px rgba(0,0,0,0.15),-2px -2px 8px rgba(255,255,255,0.5);cursor:pointer;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);border:none;outline:none}
+#add-btn{background:linear-gradient(135deg,#fda4af 0%,#f472b6 100%)}
+#export-btn{background:linear-gradient(135deg,#a78bfa 0%,#8b5cf6 100%)}
+#import-btn{background:linear-gradient(135deg,#6ee7b7 0%,#10b981 100%)}
+#organize-btn{background:linear-gradient(135deg,#fdba74 0%,#f97316 100%)}
+#dark-mode-btn{background:linear-gradient(135deg,#374151 0%,#1f2937 100%)}
+.ctrl-btn:hover{transform:scale(1.15) rotate(5deg);box-shadow:6px 6px 20px rgba(0,0,0,0.2)}
+.ctrl-btn:active{transform:scale(0.95)}
+#export-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:550px;background:linear-gradient(145deg,#ffffff 0%,#fff5f8 100%);padding:2rem;border-radius:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.15),0 0 0 1px rgba(244,114,182,0.1);z-index:2000000;display:none;border:2px solid rgba(244,114,182,0.2)}
+#export-text{width:100%;height:350px;font-family:'Nunito',monospace;font-size:0.9rem;padding:1.25rem;background:linear-gradient(145deg,#fefefe 0%,#faf5ff 100%);border:2px dashed rgba(167,139,250,0.3);border-radius:16px;resize:none;outline:none;color:#5c4033}
+#export-text:focus{border-color:rgba(244,114,182,0.5)}
+#import-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:550px;background:linear-gradient(145deg,#ffffff 0%,#f0fdf4 100%);padding:2rem;border-radius:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.15),0 0 0 1px rgba(16,185,129,0.1);z-index:2000000;display:none;border:2px solid rgba(16,185,129,0.2)}
+#import-text{width:100%;height:280px;font-family:'Nunito',monospace;font-size:0.9rem;padding:1.25rem;background:linear-gradient(145deg,#fefefe 0%,#f0fdf4 100%);border:2px dashed rgba(16,185,129,0.3);border-radius:16px;resize:none;outline:none;color:#5c4033}
+#import-text:focus{border-color:rgba(16,185,129,0.5)}
+.snap-preview{outline:3px dashed #f472b6;opacity:0.7;animation:pulse-outline 1s infinite}
+@keyframes pulse-outline{0%,100%{outline-offset:0px}50%{outline-offset:4px}}
+.empty-state h1{color:#ec4899;font-weight:700}
+.empty-state p{color:#9ca3af}
+.bears{position:fixed;bottom:1rem;left:1.5rem;display:flex;align-items:center;gap:4px;z-index:1000}
+.bear{font-size:1.8rem;filter:drop-shadow(1px 1px 2px rgba(0,0,0,0.1))}
+.bears-text{font-size:0.75rem;color:#d97706;font-weight:600;margin-left:6px;opacity:0.7}
+.page-title{position:fixed;top:1rem;left:50%;transform:translateX(-50%);font-size:2.5rem;font-weight:700;color:rgba(236,72,153,0.4);letter-spacing:6px;text-transform:lowercase;pointer-events:none;z-index:100000;text-shadow:2px 2px 8px rgba(255,182,193,0.3)}
+.collapsed-indicator{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:0.65rem;color:#9ca3af;white-space:nowrap;cursor:pointer;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,0.8);transition:all 0.2s;display:none}
+.collapsed-indicator:hover{color:#ec4899;background:rgba(244,114,182,0.1)}
+.note.is-pin-root.collapsed .collapsed-indicator{display:block}
+.shuffle-preview{position:absolute;left:0;right:0;bottom:18px;top:50%;padding:0.5rem 0.75rem;padding-top:1.2rem;font-family:'Nunito',sans-serif;font-size:0.8rem;color:#7c3aed;background:linear-gradient(145deg,rgba(243,232,255,0.95) 0%,rgba(237,220,255,0.95) 100%);border-radius:0 0 14px 14px;pointer-events:auto;line-height:1.4;overflow:hidden;border-top:1px dashed rgba(167,139,250,0.4);display:none}
+.shuffle-preview .shuffle-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;opacity:0.6;display:block;margin-bottom:2px}
+.shuffle-resize-handle{position:absolute;top:0;left:0;right:0;height:14px;cursor:ns-resize;display:flex;justify-content:center;align-items:center;background:rgba(139,92,246,0.1);border-radius:0;transition:background 0.2s}
+.shuffle-resize-handle:hover{background:rgba(139,92,246,0.25)}
+.shuffle-resize-handle::after{content:'• • •';font-size:7px;color:rgba(139,92,246,0.5);letter-spacing:2px}
+.note.is-pin-root.collapsed .shuffle-preview.active{display:block}
+body.dark-mode .shuffle-preview{background:linear-gradient(145deg,rgba(45,45,84,0.95) 0%,rgba(37,37,72,0.95) 100%);color:#c4b5fd;border-top-color:rgba(139,92,246,0.4)}
+.header-btn.shuffle-btn{color:#8b5cf6}
+.header-btn.shuffle-btn:hover{background:rgba(139,92,246,0.2)}
+/* Word / Definition split */
+.note-body{display:flex;flex-direction:column;flex-grow:1;min-height:0;position:relative}
+.note-word,.note-def{border:none;outline:none;resize:none;width:100%;font-family:'Nunito',sans-serif;font-size:0.85rem;color:#5c4033;background:transparent;line-height:1.5;flex:1 1 50%;min-height:20px}
+.note-word::placeholder,.note-def::placeholder{color:#d4a574;font-style:italic}
+.note-def{border-top:none}
+.note-divider{height:12px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(167,139,250,0.08);border-radius:4px;margin:2px 0;transition:background 0.2s;position:relative}
+.note-divider:hover{background:rgba(167,139,250,0.2)}
+.note-divider::after{content:'· · ·';font-size:8px;color:rgba(139,92,246,0.4);letter-spacing:2px}
+.note-divider-label{position:absolute;right:4px;font-size:0.5rem;text-transform:uppercase;letter-spacing:0.5px;color:rgba(139,92,246,0.4);pointer-events:none}
+body.dark-mode .note-word,body.dark-mode .note-def{color:#e5e5e5}
+body.dark-mode .note-word::placeholder,body.dark-mode .note-def::placeholder{color:#888}
+body.dark-mode .note-divider{background:rgba(139,92,246,0.12)}
+body.dark-mode .note-divider:hover{background:rgba(139,92,246,0.25)}
+/* Shuffle flashcard states */
+.shuffle-preview .shuffle-word-area{font-weight:600;font-size:0.9rem;margin-bottom:4px}
+.shuffle-preview .shuffle-def-area{font-size:0.8rem;opacity:0.85;padding-top:4px;border-top:1px dashed rgba(139,92,246,0.3);display:none}
+.shuffle-preview.revealed .shuffle-def-area{display:block}
+/* Dark mode */
+body.dark-mode{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f0f23 100%)}
+body.dark-mode::before{background-image:radial-gradient(circle at 20% 80%,rgba(139,92,246,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(59,130,246,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(236,72,153,0.1) 0%,transparent 40%)}
+body.dark-mode::after{color:rgba(139,92,246,0.08)}
+body.dark-mode .note{background:linear-gradient(145deg,#2d2d44 0%,#252538 100%);border-color:rgba(139,92,246,0.3);box-shadow:3px 3px 15px rgba(0,0,0,0.4),-1px -1px 5px rgba(255,255,255,0.05)}
+body.dark-mode .note::before{background:linear-gradient(to bottom,#4a4a5a,#3a3a4a)}
+body.dark-mode .note.is-pin-root{background:linear-gradient(145deg,#3d2d44 0%,#352538 100%);border-color:rgba(236,72,153,0.4)}
+body.dark-mode .note.is-pin-root::before{background:linear-gradient(to bottom,#ec4899,#be185d)}
+body.dark-mode .note.is-stacked{background:linear-gradient(145deg,#2d2d54 0%,#252548 100%);border-left-color:#8b5cf6}
+body.dark-mode .note-content{color:#e5e5e5}
+body.dark-mode .note-content::placeholder{color:#888}
+body.dark-mode .drag-handle{background:rgba(139,92,246,0.2);color:#a78bfa}
+body.dark-mode .note-header{border-bottom-color:rgba(139,92,246,0.3)}
+body.dark-mode .header-btn{color:#9ca3af}
+body.dark-mode .page-title{color:rgba(167,139,250,0.4);text-shadow:2px 2px 8px rgba(139,92,246,0.2)}
+body.dark-mode .bears-text{color:#a78bfa}
+body.dark-mode #export-panel,body.dark-mode #import-panel{background:linear-gradient(145deg,#1f1f2e 0%,#252538 100%);border-color:rgba(139,92,246,0.3)}
+body.dark-mode #export-panel h2,body.dark-mode #import-panel h2{color:#e5e5e5}
+body.dark-mode #export-text,body.dark-mode #import-text{background:linear-gradient(145deg,#1a1a28 0%,#202030 100%);border-color:rgba(139,92,246,0.3);color:#e5e5e5}
+body.dark-mode .collapsed-indicator{background:rgba(30,30,45,0.9);color:#9ca3af}
+body.dark-mode .collapsed-indicator:hover{color:#a78bfa;background:rgba(139,92,246,0.2)}
+body.dark-mode .empty-state h1{color:#a78bfa}
+</style>
 </head>
 <body>
-
-    <div class="page-title">bibo notes</div>
-
-    <div id="empty-msg" class="empty-state absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-center">
-        <h1 class="text-2xl font-bold">Sticky Board</h1>
-        <p class="text-base">Pin (##) or Stack (###).<br>Export to see your Markdown.</p>
+<div class="page-title">bibo notes</div>
+<div id="empty-msg" class="empty-state absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-center" style="z-index:100000">
+    <h1 class="text-2xl font-bold">Sticky Board</h1>
+    <p class="text-base">Pin (##) or Stack (###).<br>Export to see your Markdown.<br><br>🖱️ Drag background to pan around!<br>📱 Touch &amp; drag background on mobile.<br>🟠 Auto-organize</p>
+</div>
+<div id="viewport"><div id="canvas"></div></div>
+<div class="bears">
+    <div class="bear brown-bear">🐻</div>
+    <div class="bear white-bear">🐻‍❄️</div>
+    <span class="bears-text">made for bibo with love! ♡</span>
+</div>
+<div id="export-panel">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-lg text-gray-700" id="export-title">Export</h2>
+        <button onclick="toggleExport()" class="text-gray-400 hover:text-gray-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
     </div>
-
-    <div id="canvas" class="w-full h-full relative"></div>
-
-    <div class="bears">
-        <div class="bear brown-bear">🐻</div>
-        <div class="bear white-bear">🐻‍❄️</div>
-        <span class="bears-text">made for bibo with love! ♡</span>
+    <div class="flex gap-2 mb-3">
+        <button id="export-md-tab" onclick="setExportFormat('md')" class="flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all bg-purple-500 text-white">Markdown</button>
+        <button id="export-csv-tab" onclick="setExportFormat('csv')" class="flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all bg-gray-200 text-gray-600">CSV</button>
     </div>
-
-    <div id="export-panel">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-lg text-gray-700">Markdown Export</h2>
-            <button onclick="toggleExport()" class="text-gray-400 hover:text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
+    <textarea id="export-text" readonly></textarea>
+    <div class="flex gap-3 mt-4">
+        <button onclick="downloadExport()" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-violet-400 to-purple-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm">📥 Download File</button>
+    </div>
+    <p class="text-xs text-gray-400 mt-3 text-center uppercase tracking-widest">Ordered by visual position</p>
+</div>
+<div id="import-panel">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-lg text-gray-700" id="import-title">Import</h2>
+        <button onclick="toggleImport()" class="text-gray-400 hover:text-gray-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
+    </div>
+    <div class="flex gap-2 mb-3">
+        <button id="import-md-tab" onclick="setImportFormat('md')" class="flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all bg-emerald-500 text-white">Markdown</button>
+        <button id="import-csv-tab" onclick="setImportFormat('csv')" class="flex-1 py-1.5 px-3 text-sm font-semibold rounded-lg transition-all bg-gray-200 text-gray-600">CSV</button>
+    </div>
+    <textarea id="import-text" placeholder="Paste your markdown here...&#10;&#10;## Pinned Note Title&#10;### Stacked Note 1&#10;### Stacked Note 2"></textarea>
+    <div id="import-file-area" style="display:none">
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none">
+        <div class="py-8 border-2 border-dashed border-emerald-300 rounded-xl text-center cursor-pointer hover:bg-emerald-50 transition-colors" onclick="document.getElementById('csv-file-input').click()">
+            <p class="text-emerald-500 font-semibold">📄 Click to select CSV file</p>
+            <p class="text-xs text-gray-400 mt-1">category, word, definition</p>
         </div>
-        <textarea id="export-text" readonly></textarea>
-        <p class="text-xs text-gray-400 mt-3 text-center uppercase tracking-widest">Ordered by visual position</p>
     </div>
-
-    <div id="import-panel">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-lg text-gray-700">Import Markdown</h2>
-            <button onclick="toggleImport()" class="text-gray-400 hover:text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-        </div>
-        <textarea id="import-text" placeholder="Paste your markdown here...&#10;&#10;## Pinned Note Title&#10;### Stacked Note 1&#10;### Stacked Note 2&#10;&#10;## Another Pinned Note&#10;### Its sub-note"></textarea>
-        <div class="flex gap-3 mt-4">
-            <button onclick="importMarkdown()" class="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity">
-                ✨ Import Notes
-            </button>
-            <button onclick="importMarkdown(true)" class="py-3 px-4 bg-gradient-to-r from-rose-400 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity" title="Clear existing notes and import">
-                🗑️ Replace All
-            </button>
-        </div>
-        <p class="text-xs text-gray-400 mt-3 text-center">Use ## for pinned notes, ### for stacked notes</p>
+    <div class="flex gap-3 mt-4" id="import-buttons">
+        <button onclick="doImport()" class="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity">✨ Import</button>
+        <button onclick="doImport(true)" class="py-3 px-4 bg-gradient-to-r from-rose-400 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity" title="Clear existing and import">🗑️ Replace All</button>
     </div>
-
-    <div class="controls">
-        <button id="import-btn" class="ctrl-btn" title="Import Markdown">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-        </button>
-        <button id="export-btn" class="ctrl-btn" title="Toggle Markdown Export">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-        </button>
-        <button id="add-btn" class="ctrl-btn" title="Add Note">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-        </button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('canvas');
-        const addBtn = document.getElementById('add-btn');
-        const exportBtn = document.getElementById('export-btn');
-        const exportPanel = document.getElementById('export-panel');
-        const exportText = document.getElementById('export-text');
-        const emptyMsg = document.getElementById('empty-msg');
-        
-        let notes = [];
-        let activeNote = null;
-        let resizingNote = null;
-        let offset = { x: 0, y: 0 };
-        let resizeStart = { y: 0, height: 0 };
-        let highestZ = 100;
-        let isExportOpen = false;
-
-        const NOTE_STACK_SPACING = 170;
-        const MIN_NOTE_HEIGHT = 80;
-        const MAX_NOTE_HEIGHT = 500;
-
-        window.onload = () => {
-            const saved = localStorage.getItem('drag-notes-v5');
-            if (saved) {
-                notes = JSON.parse(saved);
-                notes.forEach(n => createNoteElement(n));
-                refreshStacks();
-                updateEmptyState();
-            }
-        };
-
-        function saveNotes() {
-            localStorage.setItem('drag-notes-v5', JSON.stringify(notes));
-        }
-
-        function updateEmptyState() {
-            emptyMsg.style.display = notes.length === 0 ? 'block' : 'none';
-        }
-
-        // Update collapsed state for a pinned note
-        function updateCollapsedState(noteEl, data) {
-            const children = notes.filter(n => n.parentPinId === data.id);
-            const countSpan = noteEl.querySelector('.collapsed-count');
-            
-            if (data.isCollapsed) {
-                noteEl.classList.add('collapsed');
-                if (countSpan) countSpan.textContent = children.length;
-                children.forEach(child => {
-                    const childEl = document.getElementById(`note-${child.id}`);
-                    if (childEl) {
-                        childEl.style.display = 'none';
-                    }
-                });
-            } else {
-                noteEl.classList.remove('collapsed');
-                children.forEach(child => {
-                    const childEl = document.getElementById(`note-${child.id}`);
-                    if (childEl) {
-                        childEl.style.display = 'flex';
-                    }
-                });
-            }
-        }
-
-        function bringToFront(el, data) {
-            highestZ++;
-            el.style.zIndex = highestZ;
-            data.z = highestZ;
-            el.classList.add('active-focus');
-        }
-
-        function refreshStacks() {
-            const roots = notes.filter(n => n.isPinRoot);
-            roots.forEach(root => {
-                const children = notes.filter(n => n.parentPinId === root.id)
-                                      .sort((a, b) => a.stackOrder - b.stackOrder);
-                let cumulativeOffset = root.height || 160;
-                children.forEach((child, index) => {
-                    const el = document.getElementById(`note-${child.id}`);
-                    if (el && activeNote?.id !== child.id) {
-                        child.x = root.x;
-                        child.y = root.y + cumulativeOffset + (10 * (index + 1));
-                        el.style.left = child.x + 'px';
-                        el.style.top = child.y + 'px';
-                        cumulativeOffset += child.height || 160;
-                    }
-                });
-            });
-        }
-
-        function generateMarkdown() {
-            const mainItems = notes.filter(n => n.isPinRoot || !n.parentPinId);
-            mainItems.sort((a, b) => {
-                if (Math.abs(a.y - b.y) < 30) return a.x - b.x;
-                return a.y - b.y;
-            });
-
-            let markdown = "";
-            const processedIds = new Set();
-
-            mainItems.forEach(item => {
-                if (processedIds.has(item.id)) return;
-                if (item.isPinRoot) {
-                    markdown += `## ${item.content || "(Empty Pin)"}\n\n`;
-                    processedIds.add(item.id);
-                    const children = notes.filter(n => n.parentPinId === item.id)
-                                          .sort((a, b) => a.stackOrder - b.stackOrder);
-                    children.forEach(child => {
-                        markdown += `### ${child.content || "(Empty Note)"}\n\n`;
-                        processedIds.add(child.id);
-                    });
-                } else {
-                    markdown += `### ${item.content || "(Empty Note)"}\n\n`;
-                    processedIds.add(item.id);
-                }
-            });
-            return markdown.trim();
-        }
-
-        function toggleExport() {
-            isExportOpen = !isExportOpen;
-            if (isExportOpen) {
-                exportText.value = generateMarkdown();
-                exportPanel.style.display = 'block';
-            } else {
-                exportPanel.style.display = 'none';
-            }
-        }
-
-        function createNoteElement(data) {
-            const noteEl = document.createElement('div');
-            noteEl.className = `note ${data.isPinRoot ? 'is-pin-root' : ''} ${data.parentPinId ? 'is-stacked' : ''}`;
-            noteEl.id = `note-${data.id}`;
-            noteEl.style.left = data.x + 'px';
-            noteEl.style.top = data.y + 'px';
-            noteEl.style.zIndex = data.z || 1;
-            noteEl.style.height = (data.height || 160) + 'px';
-
-            noteEl.innerHTML = `
-                <div class="note-header">
-                    <span class="drag-handle">Sticky</span>
-                    <button class="header-btn pin-btn ${data.isPinRoot ? 'active-pin' : ''}" title="Toggle Pin">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="5" r="4" fill="currentColor"/>
-                            <path d="M12 9 L12 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                            <circle cx="12" cy="20" r="1.5" fill="currentColor"/>
-                        </svg>
-                    </button>
-                    <button class="header-btn delete-btn hover:text-red-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <textarea class="note-content" placeholder="Type here...">${data.content}</textarea>
-                <div class="resize-handle"></div>
-                <div class="collapsed-indicator">▼ <span class="collapsed-count">0</span> collapsed</div>
-            `;
-
-            const textarea = noteEl.querySelector('textarea');
-            const pinBtn = noteEl.querySelector('.pin-btn');
-            const handle = noteEl.querySelector('.drag-handle');
-            const resizeHandle = noteEl.querySelector('.resize-handle');
-
-            // Drag functionality
-            const startDrag = (clientX, clientY) => {
-                bringToFront(noteEl, data);
-                activeNote = data;
-                const rect = noteEl.getBoundingClientRect();
-                offset.x = clientX - rect.left;
-                offset.y = clientY - rect.top;
-                if (data.parentPinId) {
-                    data.parentPinId = null;
-                    noteEl.classList.remove('is-stacked');
-                    refreshStacks();
-                }
-            };
-
-            // Make entire header draggable with double-click support
-            const header = noteEl.querySelector('.note-header');
-            let lastClickTime = 0;
-            let hasMoved = false;
-            let startPos = { x: 0, y: 0 };
-            
-            header.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.header-btn')) return;
-                hasMoved = false;
-                startPos = { x: e.clientX, y: e.clientY };
-                startDrag(e.clientX, e.clientY);
-            });
-            
-            header.addEventListener('mousemove', (e) => {
-                if (activeNote === data) {
-                    const dist = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
-                    if (dist > 5) hasMoved = true;
-                }
-            });
-            
-            header.addEventListener('mouseup', (e) => {
-                if (e.target.closest('.header-btn')) return;
-                if (hasMoved) return; // Don't count as click if dragged
-                
-                const now = Date.now();
-                if (now - lastClickTime < 400) {
-                    // Double click detected!
-                    if (data.isPinRoot) {
-                        const children = notes.filter(n => n.parentPinId === data.id);
-                        if (children.length > 0) {
-                            data.isCollapsed = !data.isCollapsed;
-                            updateCollapsedState(noteEl, data);
-                            saveNotes();
-                        }
-                    }
-                    lastClickTime = 0; // Reset
-                } else {
-                    lastClickTime = now;
-                }
-            });
-            
-            header.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.header-btn')) return;
-                startDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }, {passive: true});
-
-            // Click on collapsed indicator to expand
-            const collapsedIndicator = noteEl.querySelector('.collapsed-indicator');
-            collapsedIndicator.addEventListener('click', (e) => {
-                e.stopPropagation();
-                data.isCollapsed = false;
-                updateCollapsedState(noteEl, data);
-                saveNotes();
-            });
-
-            // Apply initial collapsed state if loading from saved data
-            if (data.isCollapsed) {
-                setTimeout(() => updateCollapsedState(noteEl, data), 0);
-            }
-
-            // Resize functionality
-            const startResize = (clientY) => {
-                resizingNote = data;
-                noteEl.classList.add('is-resizing');
-                bringToFront(noteEl, data);
-                resizeStart.y = clientY;
-                resizeStart.height = data.height || 160;
-            };
-
-            resizeHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                startResize(e.clientY);
-            });
-
-            resizeHandle.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-                startResize(e.touches[0].clientY);
-            }, {passive: true});
-
-            pinBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                data.isPinRoot = !data.isPinRoot;
-                noteEl.classList.toggle('is-pin-root', data.isPinRoot);
-                pinBtn.classList.toggle('active-pin', data.isPinRoot);
-                if (data.isPinRoot) {
-                    data.parentPinId = null;
-                    noteEl.classList.remove('is-stacked');
-                }
-                refreshStacks();
-                saveNotes();
-            });
-
-            textarea.addEventListener('input', (e) => {
-                data.content = e.target.value;
-                saveNotes();
-            });
-
-            noteEl.querySelector('.delete-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                notes = notes.filter(n => n.id !== data.id);
-                noteEl.remove();
-                refreshStacks();
-                saveNotes();
-                updateEmptyState();
-            });
-
-            canvas.appendChild(noteEl);
-        }
-
-        addBtn.addEventListener('click', () => {
-            const id = Date.now();
-            const newNote = {
-                id,
-                x: 150 + (Math.random() * 100),
-                y: 150 + (Math.random() * 100),
-                content: '',
-                z: highestZ + 1,
-                height: 160,
-                isPinRoot: false,
-                parentPinId: null,
-                stackOrder: 0
-            };
-            notes.push(newNote);
-            createNoteElement(newNote);
-            saveNotes();
-            updateEmptyState();
-        });
-
-        exportBtn.addEventListener('click', toggleExport);
-
-        // Import functionality
-        const importBtn = document.getElementById('import-btn');
-        const importPanel = document.getElementById('import-panel');
-        const importText = document.getElementById('import-text');
-        let isImportOpen = false;
-
-        function toggleImport() {
-            isImportOpen = !isImportOpen;
-            importPanel.style.display = isImportOpen ? 'block' : 'none';
-        }
-
-        importBtn.addEventListener('click', toggleImport);
-
-        function importMarkdown(replaceAll = false) {
-            const markdown = importText.value.trim();
-            if (!markdown) return;
-
-            // Clear existing notes if replaceAll
-            if (replaceAll) {
-                notes.forEach(n => {
-                    const el = document.getElementById(`note-${n.id}`);
-                    if (el) el.remove();
-                });
-                notes = [];
-            }
-
-            // Parse markdown
-            const lines = markdown.split('\n');
-            let currentPin = null;
-            let stackOrder = 0;
-            let pinIndex = 0;
-
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed) return;
-
-                // Check for ## (pinned note)
-                if (trimmed.startsWith('## ') && !trimmed.startsWith('### ')) {
-                    const content = trimmed.substring(3).trim();
-                    const id = Date.now() + Math.random() * 1000;
-                    const newNote = {
-                        id,
-                        x: 100 + (pinIndex % 4) * 260,
-                        y: 80 + Math.floor(pinIndex / 4) * 400,
-                        content: content,
-                        z: ++highestZ,
-                        height: 160,
-                        isPinRoot: true,
-                        parentPinId: null,
-                        stackOrder: 0
-                    };
-                    notes.push(newNote);
-                    createNoteElement(newNote);
-                    currentPin = newNote;
-                    stackOrder = 0;
-                    pinIndex++;
-                }
-                // Check for ### (stacked note under current pin)
-                else if (trimmed.startsWith('### ')) {
-                    const content = trimmed.substring(4).trim();
-                    const id = Date.now() + Math.random() * 1000;
-                    const newNote = {
-                        id,
-                        x: currentPin ? currentPin.x : 100 + (pinIndex % 4) * 260,
-                        y: currentPin ? currentPin.y + 180 : 80,
-                        content: content,
-                        z: ++highestZ,
-                        height: 160,
-                        isPinRoot: false,
-                        parentPinId: currentPin ? currentPin.id : null,
-                        stackOrder: stackOrder++
-                    };
-                    notes.push(newNote);
-                    createNoteElement(newNote);
-                    
-                    // If no current pin, create as standalone
-                    if (!currentPin) {
-                        pinIndex++;
-                    }
-                }
-            });
-
-            refreshStacks();
-            saveNotes();
-            updateEmptyState();
-            toggleImport();
-            importText.value = '';
-        }
-
-        // Helper function to find insertion index in a stack based on Y position
-        function findStackInsertionIndex(root, draggedY, excludeNoteId) {
-            const children = notes.filter(n => n.parentPinId === root.id && n.id !== excludeNoteId)
-                                  .sort((a, b) => a.stackOrder - b.stackOrder);
-            
-            if (children.length === 0) return 0;
-            
-            // Calculate Y positions of each child
-            let cumulativeOffset = root.y + (root.height || 160);
-            const childPositions = [];
-            
-            children.forEach((child, index) => {
-                const childY = cumulativeOffset + (10 * (index + 1));
-                childPositions.push({ note: child, y: childY, index });
-                cumulativeOffset += child.height || 160;
-            });
-            
-            // Find where the dragged note would fit
-            // If above the first child, insert at 0
-            if (draggedY < childPositions[0].y) return 0;
-            
-            // Find the gap where the note should be inserted
-            for (let i = 0; i < childPositions.length; i++) {
-                const current = childPositions[i];
-                const next = childPositions[i + 1];
-                
-                if (next) {
-                    // Check if dragged note is between current and next
-                    const midpoint = (current.y + (current.note.height || 160) + next.y) / 2;
-                    if (draggedY < midpoint) {
-                        return i + 1;
-                    }
-                } else {
-                    // Last item - insert after it
-                    return i + 1;
-                }
-            }
-            
-            return children.length;
-        }
-
-        // Helper to show insertion preview
-        let insertionPreview = null;
-        function showInsertionPreview(root, insertIndex, excludeNoteId) {
-            hideInsertionPreview();
-            
-            const children = notes.filter(n => n.parentPinId === root.id && n.id !== excludeNoteId)
-                                  .sort((a, b) => a.stackOrder - b.stackOrder);
-            
-            // Calculate Y position for the preview line
-            let previewY;
-            if (insertIndex === 0) {
-                // Before first child - after root
-                previewY = root.y + (root.height || 160) + 5;
-            } else if (insertIndex <= children.length) {
-                // After a specific child
-                let cumulativeOffset = root.y + (root.height || 160);
-                for (let i = 0; i < insertIndex && i < children.length; i++) {
-                    cumulativeOffset += (children[i].height || 160) + 10;
-                }
-                previewY = cumulativeOffset;
-            } else {
-                previewY = root.y + (root.height || 160) + 50;
-            }
-            
-            insertionPreview = document.createElement('div');
-            insertionPreview.style.cssText = `
-                position: absolute;
-                left: ${root.x}px;
-                top: ${previewY}px;
-                width: 240px;
-                height: 4px;
-                background: #4f46e5;
-                border-radius: 2px;
-                z-index: 999999;
-                pointer-events: none;
-                box-shadow: 0 0 8px rgba(79, 70, 229, 0.5);
-            `;
-            canvas.appendChild(insertionPreview);
-        }
-        
-        function hideInsertionPreview() {
-            if (insertionPreview) {
-                insertionPreview.remove();
-                insertionPreview = null;
-            }
-        }
-
-        // Track which root we're hovering over and insertion index
-        let hoverRoot = null;
-        let hoverInsertIndex = 0;
-
-        // Mouse move for dragging
-        document.addEventListener('mousemove', (e) => {
-            // Handle resizing
-            if (resizingNote) {
-                const el = document.getElementById(`note-${resizingNote.id}`);
-                const deltaY = e.clientY - resizeStart.y;
-                let newHeight = resizeStart.height + deltaY;
-                newHeight = Math.max(MIN_NOTE_HEIGHT, Math.min(MAX_NOTE_HEIGHT, newHeight));
-                resizingNote.height = newHeight;
-                el.style.height = newHeight + 'px';
-                return;
-            }
-
-            // Handle dragging
-            if (!activeNote) return;
-            const el = document.getElementById(`note-${activeNote.id}`);
-            activeNote.x = e.clientX - offset.x;
-            activeNote.y = e.clientY - offset.y;
-            el.style.left = activeNote.x + 'px';
-            el.style.top = activeNote.y + 'px';
-
-            const pinRoots = notes.filter(n => n.isPinRoot && n.id !== activeNote.id);
-            let snapping = false;
-            hoverRoot = null;
-            
-            pinRoots.forEach(root => {
-                // Check proximity based on X alignment and Y being within the stack area
-                const xDist = Math.abs(root.x - activeNote.x);
-                const stackChildren = notes.filter(n => n.parentPinId === root.id);
-                let stackBottom = root.y + (root.height || 160);
-                stackChildren.forEach(child => stackBottom += (child.height || 160) + 10);
-                
-                // Check if we're within the horizontal snap zone and vertically near the stack
-                if (xDist < 120 && activeNote.y >= root.y - 50 && activeNote.y <= stackBottom + 100) {
-                    snapping = true;
-                    hoverRoot = root;
-                    hoverInsertIndex = findStackInsertionIndex(root, activeNote.y, activeNote.id);
-                    showInsertionPreview(root, hoverInsertIndex, activeNote.id);
-                }
-            });
-            
-            if (!snapping) {
-                hideInsertionPreview();
-            }
-            
-            el.classList.toggle('snap-preview', snapping);
-        });
-
-        const endMove = () => {
-            // End resizing
-            if (resizingNote) {
-                const el = document.getElementById(`note-${resizingNote.id}`);
-                el.classList.remove('is-resizing', 'active-focus');
-                refreshStacks();
-                saveNotes();
-                resizingNote = null;
-                return;
-            }
-
-            // End dragging
-            if (!activeNote) return;
-            const el = document.getElementById(`note-${activeNote.id}`);
-            el.classList.remove('active-focus', 'snap-preview');
-            hideInsertionPreview();
-
-            // Use the tracked hoverRoot and hoverInsertIndex from mousemove
-            if (hoverRoot) {
-                // Get existing children (excluding the note being dropped)
-                const existingChildren = notes.filter(n => n.parentPinId === hoverRoot.id && n.id !== activeNote.id)
-                                              .sort((a, b) => a.stackOrder - b.stackOrder);
-                
-                // Update stack orders: shift notes at and after insertion index
-                existingChildren.forEach((child, index) => {
-                    if (index >= hoverInsertIndex) {
-                        child.stackOrder = index + 1;
-                    } else {
-                        child.stackOrder = index;
-                    }
-                });
-                
-                // Set the dropped note's properties
-                activeNote.parentPinId = hoverRoot.id;
-                activeNote.isPinRoot = false;
-                activeNote.stackOrder = hoverInsertIndex;
-                el.classList.remove('is-pin-root');
-                el.classList.add('is-stacked');
-                
-                // Update pin button state
-                const pinBtn = el.querySelector('.pin-btn');
-                if (pinBtn) pinBtn.classList.remove('active-pin');
-            }
-
-            hoverRoot = null;
-            hoverInsertIndex = 0;
-            
-            refreshStacks();
-            saveNotes();
-            activeNote = null;
-        };
-
-        document.addEventListener('mouseup', endMove);
-        document.addEventListener('touchend', endMove);
-
-        // Touch move for dragging and resizing
-        document.addEventListener('touchmove', (e) => {
-            const touch = e.touches[0];
-
-            // Handle resizing
-            if (resizingNote) {
-                const el = document.getElementById(`note-${resizingNote.id}`);
-                const deltaY = touch.clientY - resizeStart.y;
-                let newHeight = resizeStart.height + deltaY;
-                newHeight = Math.max(MIN_NOTE_HEIGHT, Math.min(MAX_NOTE_HEIGHT, newHeight));
-                resizingNote.height = newHeight;
-                el.style.height = newHeight + 'px';
-                return;
-            }
-
-            // Handle dragging
-            if (!activeNote) return;
-            activeNote.x = touch.clientX - offset.x;
-            activeNote.y = touch.clientY - offset.y;
-            const el = document.getElementById(`note-${activeNote.id}`);
-            el.style.left = activeNote.x + 'px';
-            el.style.top = activeNote.y + 'px';
-        }, { passive: false });
-
-    </script>
+    <p class="text-xs text-gray-400 mt-3 text-center" id="import-hint">Use ## for pinned notes, ### for stacked notes</p>
+</div>
+<div class="controls">
+    <button id="dark-mode-btn" class="ctrl-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></button>
+    <button id="organize-btn" class="ctrl-btn" title="Auto-Organize Notes"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+    <button id="import-btn" class="ctrl-btn" title="Import Markdown"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg></button>
+    <button id="export-btn" class="ctrl-btn" title="Toggle Markdown Export"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+    <button id="add-btn" class="ctrl-btn" title="Add Note"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button>
+</div>
+<script src="notes.js"></script>
 </body>
 </html>
